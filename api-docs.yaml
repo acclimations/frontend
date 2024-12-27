@@ -92,11 +92,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/Todo"
 components:
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+  # securitySchemes:
+  #   BearerAuth:
+  #     type: http
+  #     scheme: bearer
+  #     bearerFormat: JWT
   schemas:
     UpdateTodoRequest:
       required:
@@ -155,5 +155,5 @@ components:
           items:
             type: string
 
-security:
-  - BearerAuth: []
+# security:
+#   - BearerAuth: []
