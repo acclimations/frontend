@@ -1,109 +1,190 @@
-import { Configuration, TodoControllerApi } from "@/api";
-import Image from "next/image";
+'use client'
 
-export default function Home() {
-  new TodoControllerApi(new Configuration({apiKey: 'hello'})).createTodo({
-    title: "Create a new todo",
-    description: "This is a new todo created using the OpenAPI client",
-    tags: ["openapi", "nextjs"],
-  },
-  );
-  
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import { TodoControllerApi as TodoApi } from '@/api'
+import type { Todo, CreateTodoRequest, UpdateTodoRequest } from '@/api'
+
+const api = new TodoApi()
+
+export default function TodoPage() {
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [newTitle, setNewTitle] = useState('')
+  const [newDescription, setNewDescription] = useState('')
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
+
+  useEffect(() => {
+    loadTodos()
+  }, [])
+
+  const loadTodos = async () => {
+    try {
+      const response = await api.getAllTodos()
+      setTodos(response.data)
+    } catch (error) {
+      console.error('Failed to load todos:', error)
+    }
+  }
+
+  const createTodo = async () => {
+    if (!newTitle.trim()) return
+
+    try {
+      const newTodo: CreateTodoRequest = {
+        title: newTitle,
+        description: newDescription,
+        completed: false
+      }
+      await api.createTodo(newTodo)
+      setNewTitle('')
+      setNewDescription('')
+      loadTodos()
+    } catch (error) {
+      console.error('Failed to create todo:', error)
+    }
+  }
+
+  const updateTodo = async (id: string, updates: UpdateTodoRequest) => {
+    try {
+      await api.updateTodo( id, updates)
+      loadTodos()
+      setEditingTodo(null)
+    } catch (error) {
+      console.error('Failed to update todo:', error)
+    }
+  }
+
+  const deleteTodo = async (id: string) => {
+    try {
+      await api.deleteTodo(id)
+      loadTodos()
+    } catch (error) {
+      console.error('Failed to delete todo:', error)
+    }
+  }
+
+  const toggleComplete = async (todo: Todo) => {
+    if (!todo.id) return
+
+    const updates: UpdateTodoRequest = {
+      title: todo.title || '',
+      description: todo.description || '',
+      completed: !todo.completed,
+      tags: todo.tags || []
+    }
+    await updateTodo(todo.id, updates)
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+    <div className="container mx-auto p-4 max-w-4xl">
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>新規ToDo作成</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Input
+              placeholder="タイトル"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <Textarea
+              placeholder="説明（任意）"
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+            />
+            <Button onClick={createTodo}>作成</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-4">
+        {todos.map((todo) => (
+          <Card key={todo.id} className="relative">
+            <CardContent className="pt-6">
+              {editingTodo?.id === todo.id ? (
+                <div className="space-y-4">
+                  <Input
+                    value={editingTodo?.title || ''}
+                    onChange={(e) =>
+                      setEditingTodo({ ...editingTodo, title: e.target.value })
+                    }
+                  />
+                  <Textarea
+                    value={editingTodo?.description || ''}
+                    onChange={(e) =>
+                      setEditingTodo({
+                        ...editingTodo,
+                        description: e.target.value
+                      })
+                    }
+                  />
+                  <div className="space-x-2">
+                    <Button
+                      onClick={() => {
+                        if (!todo.id || !editingTodo) return
+                        updateTodo(todo.id, {
+                          title: editingTodo.title || '',
+                          description: editingTodo.description || '',
+                          completed: editingTodo.completed || false,
+                          tags: editingTodo.tags || []
+                        })
+                      }}
+                    >
+                      保存
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setEditingTodo(null)}
+                    >
+                      キャンセル
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={todo.completed || false}
+                      onCheckedChange={() => toggleComplete(todo)}
+                    />
+                    <h3
+                      className={`text-lg font-semibold ${
+                        todo.completed ? 'line-through text-gray-500' : ''
+                      }`}
+                    >
+                      {todo.title}
+                    </h3>
+                  </div>
+                  {todo.description && (
+                    <p className="text-gray-600">{todo.description}</p>
+                  )}
+                  <div className="space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingTodo(todo)}
+                    >
+                      編集
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => todo.id && deleteTodo(todo.id)}
+                    >
+                      削除
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
-  );
+  )
 }
