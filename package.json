@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "openapi-gen": "npx openapi-generator-cli generate -g typescript-axios -i ./api-docs.yaml -o ./src/api"
   },
   "dependencies": {
     "next": "15.1.3",
